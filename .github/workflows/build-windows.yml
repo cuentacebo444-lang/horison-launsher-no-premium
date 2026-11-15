@@ -1,0 +1,38 @@
+name: Build Horizon Launcher (Windows)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract source archive
+        shell: pwsh
+        run: |
+          if (!(Test-Path "horizon-0.2.97.zip")) {
+            throw "Missing horizon-0.2.97.zip in the repository root."
+          }
+          Expand-Archive -Path "horizon-0.2.97.zip" -DestinationPath "source" -Force
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build launcher
+        shell: pwsh
+        run: |
+          cargo build --release --locked --manifest-path "source/horizon-0.2.97/launcher/Cargo.toml"
+
+      - name: Upload Windows launcher
+        uses: actions/upload-artifact@v4
+        with:
+          name: horizon-launcher-windows-x64
+          path: source/horizon-0.2.97/launcher/target/release/horizon-launcher.exe
+          if-no-files-found: error
+          retention-days: 14
